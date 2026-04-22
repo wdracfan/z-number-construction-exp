@@ -1,0 +1,16 @@
+import poss_distr_triangularity.experiment
+import poss_distr_concordance.experiment
+import fake_data_approximation.experiment
+import real_data_approximation.experiment
+import b_part_construction.experiment
+import p_vs_b_specificity.experiment
+import e2e.experiment
+
+poss_distr_triangularity.experiment.experiment()
+poss_distr_concordance.experiment.experiment()
+fake_data_approximation.experiment.experiment()
+real_data_approximation.experiment.experiment()
+b_part_construction.experiment.experiment_data_spec()
+b_part_construction.experiment.experiment_a_spec()
+p_vs_b_specificity.experiment.experiment()
+e2e.experiment.experiment()
