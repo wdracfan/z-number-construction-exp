@@ -5,6 +5,7 @@ import real_data_approximation.experiment
 import b_part_construction.experiment
 import p_vs_b_specificity.experiment
 import e2e.experiment
+import time_comparison.experiment
 
 poss_distr_triangularity.experiment.experiment()
 poss_distr_concordance.experiment.experiment()
@@ -14,3 +15,4 @@ b_part_construction.experiment.experiment_data_spec()
 b_part_construction.experiment.experiment_a_spec()
 p_vs_b_specificity.experiment.experiment()
 e2e.experiment.experiment()
+time_comparison.experiment.experiment()

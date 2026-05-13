@@ -13,8 +13,10 @@ def get_distributions(data: np.ndarray) -> dict[str, list]:
   min = np.min(data)
   max = np.max(data)
 
-  normals = [spstats.norm(loc, scale) for loc in np.arange(min, max, (max - min) / 20) for scale in np.arange(0.1, 2 * std, std / 10)]
-  expons = [spstats.expon(loc, scale) for loc in np.arange(min, max, (max - min) / 20) for scale in np.arange(0.1, 2 * std, std / 10)]
+  min_std = 0.1 if std > 0.1 else 10 ** np.floor((np.log10(std)))
+
+  normals = [spstats.norm(loc, scale) for loc in np.arange(min, max, (max - min) / 20) for scale in np.arange(min_std, 2 * std, std / 10)]
+  expons = [spstats.expon(loc, scale) for loc in np.arange(min, max, (max - min) / 20) for scale in np.arange(min_std, 2 * std, std / 10)]
   uniforms = [spstats.uniform(loc, scale) 
             for loc in np.arange(min - (max - min) / 2, min + (max - min) / 2, (max - min) / 20) 
             for scale in np.arange((max - min) / 2, 3 * (max - min) / 2, (max - min) / 10)]

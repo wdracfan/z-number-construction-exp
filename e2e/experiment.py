@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.integrate as spint
 import scipy.stats as spstats
+from time import time
 from tqdm import tqdm
 
 import pandas as pd
@@ -121,35 +122,44 @@ def build_z_number(data: np.ndarray,
           u_min=None, u_max=None, u_step=None,
           optimize='specificity', beta=0.5, s_threshold=0.5, c_threshold=0.7,
           defuzzify='peak',
-          p=2):
+          p=2, allow_discontinuities=False,
+          measure_time=False):
     if u_min == None:
       u_min = min(data)
     if u_max == None:
       u_max = max(data)
     if u_step == None:
       u_step = (u_max - u_min) / 10
+    elif u_step == 'sturges':
+      u_step = (u_max - u_min) / (np.floor(np.log2(data.shape[0])) + 1)
 
     best_score = None
     best_subscore = None
     best_A = None
     best_B = None
 
+    t0 = time()
+
     # Generate distributions
     distributions = get_distributions(data)
     # Get distances
     euclide_dists, _, _ = calculate_distances(data, distributions, ['euclide'])
 
+    t1 = time()
+
+    u_step_discontinuity = 0 if allow_discontinuities else u_step
+
     for a in tqdm(np.linspace(u_min, u_max, int((u_max - u_min) / u_step) + 1)):
-      for b in np.linspace(a + u_step, u_max, int((u_max - a - u_step) / u_step) + 1):
+      for b in np.linspace(a + u_step_discontinuity, u_max, int((u_max - a - u_step) / u_step) + 1):
         for c in np.linspace(b, u_max, int((u_max - b) / u_step) + 1):
-          for d in np.linspace(c + u_step, u_max, int((u_max - c - u_step) / u_step) + 1):
+          for d in np.linspace(c + u_step_discontinuity, u_max, int((u_max - c - u_step) / u_step) + 1):
             A = FS(a, b, c, d)
             specificity = A.specificity(u_max - u_min)
 
             if optimize == 'b' and specificity < s_threshold:
               continue
             B = construct_b_part(data, A, distributions, euclide_dists, p=p)
-            print(specificity, A, B)
+            # print(specificity, A, B)
             if np.isnan(B.a) or np.isnan(B.b) or np.isnan(B.d) or np.isinf(B.a) or np.isinf(B.b) or np.isinf(B.d):
               continue
             b_defuzzified = (B.a + B.b + B.d) / 3 if defuzzify == 'centroid' else B.b
@@ -173,7 +183,9 @@ def build_z_number(data: np.ndarray,
               best_A = A
               best_B = B
 
-    return best_A, best_B
+    t2 = time()
+
+    return (best_A, best_B) if not measure_time else (best_A, best_B, t1 - t0, t2 - t1) 
 
 def build_z_number_experiment(data, path, **kwargs):
     a, b = build_z_number(data, **kwargs)
@@ -202,6 +214,11 @@ def build_z_number_experiment(data, path, **kwargs):
     plt.close()
 
 def experiment():
+    df = pd.read_csv('datasets/software_defect_prediction_dataset.csv')
+    data = np.array(df['bug_fix_commits'] / df['lines_of_code'])
+    data = data[data < 0.1]
+    build_z_number_experiment(data, 'software/optimize_b', optimize='b', s_threshold=0.5, defuzzify='centroid', p=2, allow_discontinuities=True)
+
     df = pd.read_csv('datasets/globalAirQuality.csv')
     data = np.array(df[df.city == 'Paris']['no2'])
     
@@ -225,4 +242,3 @@ def experiment():
 
     build_z_number_experiment(data, 'mosquito/optimize_spec', optimize='specificity', c_threshold=0.6, defuzzify='centroid', p=3)
     build_z_number_experiment(data, 'mosquito/optimize_both', optimize='both', beta=0.5, defuzzify='centroid', p=3)
-    
